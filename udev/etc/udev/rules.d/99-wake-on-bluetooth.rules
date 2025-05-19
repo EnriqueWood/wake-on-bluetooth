@@ -1,0 +1,2 @@
+# Wake-on-Bluetooth: run script when a new HCI (Bluetooth) adapter appears
+ACTION=="add", SUBSYSTEM=="bluetooth", KERNEL=="hci[0-9]*", RUN+="/usr/local/bin/wake-on-bluetooth"

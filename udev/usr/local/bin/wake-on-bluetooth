@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+if (( EUID != 0 )); then
+  log "ERROR: this script must be run as root"
+  exit 1
+fi
+
+LOG_TAG="wake-on-bluetooth"
+
+log() {
+  command -v logger &>/dev/null && logger -t "$LOG_TAG" "$1"
+  echo "[$LOG_TAG] $1"
+}
+
+declare -a WAKE_PATHS=()
+
+# Collect all Bluetooth USB device wakeup paths
+for dev in /sys/class/bluetooth/*; do
+  dev_name=$(readlink -f "$dev" | grep -Po "(?<=usb\\d/)[^/]+")
+  path="/sys/bus/usb/devices/$dev_name/power/wakeup"
+  [[ -f "$path" ]] && WAKE_PATHS+=("$path")
+done
+
+# If none found, exit
+if (( ${#WAKE_PATHS[@]} == 0 )); then
+  logger -t "$LOG_TAG" "No Bluetooth wakeup path found"
+  exit 0
+fi
+desired=enabled
+for path in "${WAKE_PATHS[@]}"; do
+  current=$(<"$path")
+  if [[ $current != $desired ]]; then
+    echo "$desired" > "$path"
+    log "Wakeup state for $path set to '$desired'"
+  else
+    log "Wakeup state for $path unchanged (already '$desired')"
+  fi
+done

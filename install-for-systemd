@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# You will need to be root to run this script
+if [ "$EUID" -ne 0 ]; then
+    echo "This script must be run as root"
+    exec sudo "$0" "$@"
+fi
+
+SYSTEMD_FOLDER=/etc/systemd/system
+SERVICE=wake-on-bluetooth.service
+mkdir -p "$SYSTEMD_FOLDER"
+
+SERVICE_DEST="${SYSTEMD_FOLDER}/${SERVICE}"
+URL="https://raw.githubusercontent.com/EnriqueWood/wake-on-bluetooth/main/systemd$SERVICE_DEST"
+if ! curl -fsSL "$URL" -o "$SERVICE_DEST"; then
+  echo "Error downloading service file from $URL" >&2
+  exit 1
+fi
+
+BIN_FOLDER="/usr/local/bin"
+mkdir -p "$SYSTEMD_FOLDER"
+BIN_DEST="${BIN_FOLDER}/wake-on-bluetooth"
+URL="https://raw.githubusercontent.com/EnriqueWood/wake-on-bluetooth/main/systemd$BIN_DEST"
+if ! curl -fsSL "$URL" -o "$BIN_DEST"; then
+  echo "Error downloading binary file from $URL" >&2
+  rm "$SERVICE_DEST" "$BIN_DEST"
+  exit 1
+fi
+
+chmod 0755 "$BIN_DEST"
+systemctl daemon-reload
+systemctl enable "${SERVICE}"
+echo ""
+echo "systemd service installation complete!"
+echo ""
+echo "To disable the service run:"
+echo "  sudo systemctl disable $SERVICE && systemctl stop $SERVICE && systemctl daemon-reload"
+exit 0

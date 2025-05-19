@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# You will need to be root to run this script
+if [ "$EUID" -ne 0 ]; then
+    echo "This script must be run as root"
+    exec sudo "$0" "$@"
+fi
+
+# batocera-based installer
+if [ -f /boot/batocera-boot.conf ]; then
+  echo "Installing BATOCERA version"
+  curl -fsSL https://raw.githubusercontent.com/EnriqueWood/batocera-patches/main/enable-wake-on-bluetooth | bash
+  exit 0
+fi
+
+# systemd-based installer
+SYSTEMCTL_CMD=$(command -v systemctl)
+if [ -n "$SYSTEMCTL_CMD" ]; then
+  echo "Installing systemd version"
+  curl -fsSL https://raw.githubusercontent.com/EnriqueWood/wake-on-bluetooth/main/install-for-systemd | bash
+  exit 0
+fi
+
+# udev-based installer
+echo "Installing udev rule version…"
+curl -fsSL https://raw.githubusercontent.com/EnriqueWood/wake-on-bluetooth/main/install-for-udev | bash
+exit 0

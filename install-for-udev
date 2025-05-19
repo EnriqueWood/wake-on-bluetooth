@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# You will need to be root to run this script
+if [ "$EUID" -ne 0 ]; then
+    echo "This script must be run as root"
+    exec sudo "$0" "$@"
+fi
+
+UDEV_FOLDER=/etc/udev/rules.d
+RULES_FILE=99-wake-on-bluetooth.rules
+mkdir -p "$UDEV_FOLDER"
+
+RULES_FILE_DEST="${UDEV_FOLDER}/${RULES_FILE}"
+URL="https://raw.githubusercontent.com/EnriqueWood/wake-on-bluetooth/main/udev$RULES_FILE_DEST"
+if ! curl -fsSL "$URL" -o "$RULES_FILE_DEST"; then
+  echo "Error downloading rules file from $URL" >&2
+  exit 1
+fi
+
+BIN_FOLDER="/usr/local/bin"
+mkdir -p "$SYSTEMD_FOLDER"
+BIN_DEST="${BIN_FOLDER}/wake-on-bluetooth"
+URL="https://raw.githubusercontent.com/EnriqueWood/wake-on-bluetooth/main/systemd$BIN_DEST"
+if ! curl -fsSL "$URL" -o "$BIN_DEST"; then
+  echo "Error downloading binary file from $URL" >&2
+  rm "$RULES_FILE_DEST" "$BIN_DEST"
+  exit 1
+fi
+
+chmod 0755 "$BIN_DEST"
+udevadm control --reload-rules
+udevadm trigger --subsystem-match=bluetooth
+echo ""
+echo "udev method installation complete!"
+echo ""
+echo "To disable the wake on bluetooth functionality run:"
+echo "  sudo rm \"$RULES_FILE\" \"$BIN_DEST\""
+exit 0

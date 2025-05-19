@@ -1,0 +1,10 @@
+[Unit]
+Description=Enable/disable the machine to be resumed from suspension using Bluetooth devices
+Before=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target final.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/wake-on-bluetooth
+
+[Install]
+WantedBy=sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
